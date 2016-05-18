@@ -35,7 +35,7 @@ def getText(nodelist):
     return ''.join(rc)
 
 
-def getRoutes():
+def getRoutes(reprint=False):
     routes = []
     h = httplib2.Http()
     h.add_credentials(username, password)
@@ -43,17 +43,15 @@ def getRoutes():
     <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:avt="http://www.avtotehcenter.loc">
        <soapenv:Header/>
        <soapenv:Body>
-          <avt:GetLists/>
+          <avt:GetLists>
+            <avt:reprint>%s</avt:reprint>
+          </avt:GetLists>
        </soapenv:Body>
     </soapenv:Envelope>
     """
 
-    # body = ''
-
-    #soapAction = 'http://www.avtotehcenter.loc#RouteList:GetLists'
-
     resp, content = h.request(locationWS, method='POST',
-                              body=body,
+                              body=body % reprint,
                               headers={"Content-Type": "application/soap+xml;charset=UTF-8;\
                                     action=\"http://www.avtotehcenter.loc#RouteList:GetLists\""})
 
@@ -177,11 +175,15 @@ if __name__ == '__main__':
         print('#                      ПЕЧАТЬ МАРШРУТНЫХ ЛИСТОВ                    #')
         print('####################################################################')
         print('')
+        print(' 0. Повторить печать маршрута')
         routes = getRoutes()
         showRoutes(routes)
         print('')
         print('####################################################################')
         idRoute = int(input(u'Введите номер маршрута для печати: '))
+        if idRoute == 0:
+            routes = getRoutes(True)
+            showRoutes(routes)
         if 1 <= idRoute <= len(routes):
             print('')
             print('####################################################################')
