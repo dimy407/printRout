@@ -21,6 +21,8 @@ locationWS = optionDict['locationWS']
 printerName = optionDict['printerName']
 AcroRd32exe = optionDict['AcroRd32exe']
 ###############################################################
+fileCausesName = 'causes.txt'
+###############################################################
 username = ''
 password = ''
 
@@ -44,7 +46,7 @@ def getRoutes(reprint=False):
        <soapenv:Header/>
        <soapenv:Body>
           <avt:GetLists>
-            <avt:reprint>%s</avt:reprint>
+            <avt:RepeatedPrint>%s</avt:RepeatedPrint>
           </avt:GetLists>
        </soapenv:Body>
     </soapenv:Envelope>
@@ -81,7 +83,13 @@ def showRoutes(routes):
         print(' %s. %s / %s' % (i+1, routes[i]['ShippingDate'], routes[i]['RouteName']))
         i += 1
 
-def printRoute(Code, Date, idDocs):
+def showList(list):
+    i = 0
+    while i < len(list):
+        print(' %s. %s' % (i, list[i]))
+        i += 1
+
+def printRoute(Code, Date, idDocs, causeReprint=''):
     h = httplib2.Http()
     h.add_credentials(username, password)
     body = """
@@ -125,6 +133,7 @@ def printRoute(Code, Date, idDocs):
              </avt:Documents>
              <avt:Num>%s</avt:Num>
              <avt:Date>%s</avt:Date>
+             <avt:Cause>%s</avt:Cause>
           </avt:PrintDocumentPackage>
        </soapenv:Body>
     </soapenv:Envelope>
@@ -139,7 +148,7 @@ def printRoute(Code, Date, idDocs):
                                            idDocs.count('4') > 0,
                                            idDocs.count('5') > 0,
                                            idDocs.count('6') > 0,
-                                           Code, Date),
+                                           Code, Date, causeReprint),
                               headers={"Content-Type": "application/soap+xml;charset=UTF-8;\
                                     action=\"http://www.avtotehcenter.loc#RouteList:GetLists\""})
 
@@ -160,6 +169,25 @@ def printRoute(Code, Date, idDocs):
     else:
         print('Ошибка при получении данных' + content.decode('utf-8'))
 
+
+def addCause(cause):
+    cause.replace(';', ' ')
+    f = open(fileCausesName, 'a')
+    f.write(cause + ';')
+    f.close()
+
+def getCause():
+    try:
+        file = open(fileCausesName, 'r')
+    except IOError as e:
+        return ['Другое']
+    else:
+        with file:
+            causes = file.read().split(';')
+            causes.append('Другое')
+            return causes
+
+
 if __name__ == '__main__':
     print('####################################################################')
     print('#                            АВТОРИЗАЦИЯ                           #')
@@ -170,6 +198,7 @@ if __name__ == '__main__':
     # username = 'wser'
     # password = 'a1s2d3f4g5h6'
 
+    causeReprint = ''
     while True:
         print('####################################################################')
         print('#                      ПЕЧАТЬ МАРШРУТНЫХ ЛИСТОВ                    #')
@@ -182,6 +211,21 @@ if __name__ == '__main__':
         print('####################################################################')
         idRoute = int(input(u'Введите номер маршрута для печати: '))
         if idRoute == 0:
+            # Запросить причину повторной печати
+            # 1. Получить из файла список причин
+            #   - по умолчание в списке первый и последний элемент 1. Замятие бумаги ... n.Другое
+            #   -
+            # 2. Показать список причин
+            # 3. Выбрать причину по порядковому номеру и отправить
+            # 4. Организовать запись в файл причины "другое"
+            causes = getCause()
+            showList(causes)
+            causeReprint = causes[int(input(u'Укажите причину повторной печати: '))]
+            if causeReprint == 'Другое':
+                # todo: Проверить на заполненность запросить снова!!!!
+                causeReprint = input(u'Введите причину повторной печати: ')
+
+                addCause(causeReprint)
             routes = getRoutes(True)
             showRoutes(routes)
         if 1 <= idRoute <= len(routes):
@@ -197,7 +241,7 @@ if __name__ == '__main__':
 
             print('####################################################################')
             idDocs = str(input('Вводить через пробел: ')).split(' ')
-            printRoute(routes[idRoute-1]['Code'], routes[idRoute-1]['Date'], idDocs)
+            printRoute(routes[idRoute-1]['Code'], routes[idRoute-1]['Date'], idDocs, causeReprint)
         else:
             input('Неверно указан номер маршрута(нажмите любую клавишу)')
             continue
