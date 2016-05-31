@@ -133,7 +133,7 @@ def printRoute(Code, Date, idDocs, causeReprint=''):
              </avt:Documents>
              <avt:Num>%s</avt:Num>
              <avt:Date>%s</avt:Date>
-             <avt:Cause>%s</avt:Cause>
+             <avt:Cause>'%s'</avt:Cause>
           </avt:PrintDocumentPackage>
        </soapenv:Body>
     </soapenv:Envelope>
@@ -177,13 +177,15 @@ def addCause(cause):
     f.close()
 
 def getCause():
+    return ['Замятие бумаги', 'Ошибка', 'Другое']
     try:
-        file = open(fileCausesName, 'r')
+        file = open(fileCausesName, 'r', encoding='UTF-8')
     except IOError as e:
         return ['Другое']
     else:
         with file:
             causes = file.read().split(';')
+            causes.remove('')  # Удаляем последний пустой єлемент
             causes.append('Другое')
             return causes
 
@@ -221,13 +223,22 @@ if __name__ == '__main__':
             causes = getCause()
             showList(causes)
             causeReprint = causes[int(input(u'Укажите причину повторной печати: '))]
+            """
             if causeReprint == 'Другое':
-                # todo: Проверить на заполненность запросить снова!!!!
-                causeReprint = input(u'Введите причину повторной печати: ')
+
+                inputCause = True
+                while inputCause:
+                    causeReprint = input(u'Введите причину повторной печати: ')
+                    if causeReprint !='':
+                        inputCause = False
+                    else:
+                        print('Причина печати не должна быть пустой!')
 
                 addCause(causeReprint)
+            """
             routes = getRoutes(True)
             showRoutes(routes)
+            idRoute = int(input(u'Введите номер маршрута для печати: '))
         if 1 <= idRoute <= len(routes):
             print('')
             print('####################################################################')
@@ -241,6 +252,16 @@ if __name__ == '__main__':
 
             print('####################################################################')
             idDocs = str(input('Вводить через пробел: ')).split(' ')
+
+            if causeReprint == 'Другое':
+                causeReprint = 'other'
+            elif causeReprint == 'Замятие бумаги':
+                causeReprint = 'paper jam'
+            elif causeReprint == 'Ошибка':
+                causeReprint = 'error'
+            else:
+                causeReprint = ''
+
             printRoute(routes[idRoute-1]['Code'], routes[idRoute-1]['Date'], idDocs, causeReprint)
         else:
             input('Неверно указан номер маршрута(нажмите любую клавишу)')
