@@ -155,17 +155,23 @@ def printRoute(Code, Date, idDocs, causeReprint=''):
     if resp.status == 200:
         resultsXML = content.decode('utf-8')
         dom = parseString(resultsXML)
-        base64PDF = getText(dom.getElementsByTagName("m:return")[0].childNodes)
-        docPDF = base64.b64decode(base64PDF)
-        binfile = open(filePDF, 'wb')
-        binfile.write(docPDF)
-        binfile.close()
 
-        cmd = '"%s" /N /T "%s" "%s"' % (AcroRd32exe, filePDF, printerName)
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = proc.communicate()
-        exit_code = proc.wait()
-        os.remove(filePDF)
+        list_result = dom.getElementsByTagName("m:return")[0].childNodes
+
+        for index in range(list_result.length):
+            if list_result.item(index).localName == 'Value':
+                # base64PDF = getText(dom.getElementsByTagName("m:return")[0].childNodes)
+                base64PDF = getText(list_result.item(index).childNodes)
+                docPDF = base64.b64decode(base64PDF)
+                binfile = open(filePDF, 'wb')
+                binfile.write(docPDF)
+                binfile.close()
+
+                cmd = '"%s" /N /T "%s" "%s"' % (AcroRd32exe, filePDF, printerName)
+                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                stdout, stderr = proc.communicate()
+                exit_code = proc.wait()
+                os.remove(filePDF)
     else:
         print('Ошибка при получении данных' + content.decode('utf-8'))
 
