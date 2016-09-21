@@ -203,9 +203,6 @@ if __name__ == '__main__':
     print('')
     username = str(input(' Логин  : '))
     password = str(input(' Пароль : '))
-    # username = 'wser'
-    # password = 'a1s2d3f4g5h6'
-
     causeReprint = ''
     while True:
         print('####################################################################')
